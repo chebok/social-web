@@ -54,7 +54,7 @@ Microsoft)
 Выполните команду:
 
 ```shell
-docker-compose up --build
+docker compose up --build
 # -d - для запуска в фоне
 # --build - для повторной пересборки контейнеров
 ```

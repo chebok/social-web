@@ -1,4 +1,4 @@
-# Angular NestJS PostgreSQL GraphQL Typeorm Docker
+# NestJS PostgreSQL
 
 Простое backend приложение на базе NestJS, где в качестве базы данных выступает PostgreSQL. Все это упаковано в docker-compose
 

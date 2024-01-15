@@ -1,0 +1,8 @@
+API_PORT=3001
+
+DB_USER=admin
+DB_PASSWORD=admin
+DB_HOST=0.0.0.0
+DB_PORT=5432
+DB_NAME=social_web
+JWT_SECRET=secret

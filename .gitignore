@@ -1,8 +1,11 @@
 # compiled output
 backend/dist
+seed-generator/dist
+seed-generator/seed-data
 
 # dependencies
 backend/node_modules
+seed-generator/node_modules
 
 # db volume
 pgdata

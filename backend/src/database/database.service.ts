@@ -1,13 +1,28 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import * as path from 'path';
 import { promises as fs } from 'fs';
-import { FileMigrationProvider, Kysely, Migrator } from 'kysely';
+import { FileMigrationProvider, Kysely, Migrator, PostgresDialect } from 'kysely';
 import { POSTGRE_DB_SOURCE } from './database.constants';
 import { SocialWebDatabase } from './database.interface';
+import { Pool } from 'pg';
 
 @Injectable()
 export class DatabaseService implements OnModuleInit {
-  constructor(@Inject(POSTGRE_DB_SOURCE) readonly db: Kysely<SocialWebDatabase>) {}
+  private db: Kysely<SocialWebDatabase>;
+
+  constructor(@Inject(POSTGRE_DB_SOURCE) readonly pgPool: Pool) {
+    const dialect = new PostgresDialect({
+      pool: this.pgPool,
+    });
+    this.db = new Kysely<SocialWebDatabase>({
+      dialect,
+      log: ['query'],
+    });
+  }
+
+  public getDb() {
+    return this.db;
+  }
 
   async onModuleInit() {
     await this.migrateToLatest();

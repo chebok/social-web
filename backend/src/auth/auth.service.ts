@@ -21,7 +21,7 @@ export class AuthService {
 
   async validateUser({ id, password }: LoginDto): Promise<{ id: string }> {
     const user = await this.db
-      .selectFrom('users')
+      .selectFrom('user')
       .select(['id', 'password as passwordHash'])
       .where('id', '=', id)
       .executeTakeFirst();

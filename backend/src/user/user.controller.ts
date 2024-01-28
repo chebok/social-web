@@ -1,6 +1,7 @@
-import { Body, Controller, Get, HttpCode, NotFoundException, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, NotFoundException, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { UserRegisterDto } from './dto/user-register.dto';
 import { UserService } from './user.service';
+import { UserSearchParamsDto } from './dto/search-params.dto';
 
 @Controller('user')
 export class UserController {
@@ -26,6 +27,17 @@ export class UserController {
         throw new NotFoundException('Анкета не найдена');
       }
       return user;
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  }
+
+  @Get('search')
+  async getUsersByPrefix(@Query() { first_name, last_name }: UserSearchParamsDto) {
+    try {
+      const users = await this.userService.findUsersByPrefix(first_name, last_name);
+      return users;
     } catch (e) {
       console.error(e);
       throw e;

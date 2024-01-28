@@ -1,0 +1,27 @@
+{
+  "name": "seed-generator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node main",
+    "generate": "ts-node generator"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@faker-js/faker": "^8.4.0",
+    "lodash": "^4.17.21",
+    "pg": "^8.11.3",
+    "pg-copy-streams": "^6.0.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "undici": "^6.5.0"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.202",
+    "@types/node": "^20.11.5",
+    "@types/pg": "^8.10.9",
+    "@types/pg-copy-streams": "^1.2.5"
+  }
+}

@@ -10,7 +10,7 @@ export interface IDatabaseModuleAsyncOptions extends Pick<ModuleMetadata, 'impor
 }
 
 export interface SocialWebDatabase {
-  users: UserTable;
+  user: UserTable;
 }
 
 export interface UserTable {

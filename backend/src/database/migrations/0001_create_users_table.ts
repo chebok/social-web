@@ -3,7 +3,7 @@ import { Kysely, sql } from 'kysely';
 export async function up(db: Kysely<any>): Promise<void> {
   // Migration code
   sql<any>`
-    CREATE TABLE public.users (
+    CREATE TABLE public.user (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       first_name VARCHAR(255) NOT NULL,
       second_name VARCHAR(255),
@@ -17,5 +17,5 @@ export async function up(db: Kysely<any>): Promise<void> {
 
 export async function down(db: Kysely<any>): Promise<void> {
   // Migration code
-  await sql<any>`DROP TABLE public.users`.execute(db);
+  await sql<any>`DROP TABLE public.user`.execute(db);
 }

@@ -24,14 +24,7 @@ export class DatabaseModule {
       useFactory: async (...args: any[]) => {
         try {
           const dbConfig = await options.useFactory(...args);
-          const dialect = new PostgresDialect({
-            pool: new Pool(dbConfig),
-          });
-          const db = new Kysely<SocialWebDatabase>({
-            dialect,
-            log: ['query'],
-          });
-          return db;
+          return new Pool(dbConfig);
         } catch (e) {
           console.error(e);
           throw e;

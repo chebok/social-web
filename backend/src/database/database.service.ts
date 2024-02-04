@@ -2,7 +2,7 @@ import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import * as path from 'path';
 import { promises as fs } from 'fs';
 import { FileMigrationProvider, Kysely, Migrator, PostgresDialect } from 'kysely';
-import { POSTGRE_DB_SOURCE } from './database.constants';
+import { PG_MASTER_DB } from './database.constants';
 import { SocialWebDatabase } from './database.interface';
 import { Pool } from 'pg';
 
@@ -10,7 +10,7 @@ import { Pool } from 'pg';
 export class DatabaseService implements OnModuleInit {
   private db: Kysely<SocialWebDatabase>;
 
-  constructor(@Inject(POSTGRE_DB_SOURCE) readonly pgPool: Pool) {
+  constructor(@Inject(PG_MASTER_DB) readonly pgPool: Pool) {
     const dialect = new PostgresDialect({
       pool: this.pgPool,
     });

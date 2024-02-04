@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "ts-node main",
-    "generate": "ts-node generator"
+    "generate": "ts-node generator",
+    "loadtest": "ts-node load-test"
   },
   "author": "",
   "license": "ISC",

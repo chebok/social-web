@@ -29,7 +29,7 @@
 git clone https://github.com/chebok/social-web.git
 ```
 
-Создайте в корне репозитория .env файл, ии воспользуйтесь .env example:
+Создайте в корне репозитория .env файл, или воспользуйтесь .env example:
 
 ```dotenv
 API_PORT=3001

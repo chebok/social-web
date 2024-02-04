@@ -22,7 +22,7 @@ export class UserController {
   @Get('get/:id')
   async getUserById(@Param('id', ParseUUIDPipe) id: string) {
     try {
-      const user = await this.userService.findUserById(id);
+      const [user] = await this.userService.findUserById(id);
       if (!user) {
         throw new NotFoundException('Анкета не найдена');
       }

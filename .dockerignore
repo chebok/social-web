@@ -5,7 +5,9 @@ backend/dist
 backend/node_modules
 
 # db volume
-pgdata
+pgdata-yellow
+pgdata-blue
+pgdata-purple
 
 # environment
 .env

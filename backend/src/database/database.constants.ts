@@ -1,2 +1,2 @@
-export const POSTGRE_DB_SOURCE = 'POSTGRE_DB_SOURCE';
-export const POSTGRE_DB_POOL = 'POSTGRE_DB_POOL';
+export const PG_MASTER_DB = 'POSTGRE_DB_SOURCE';
+export const PG_REPLICA_DB = 'POSTGRE_DB_POOL';

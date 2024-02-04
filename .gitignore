@@ -8,7 +8,9 @@ backend/node_modules
 seed-generator/node_modules
 
 # db volume
-pgdata
+pgdata-yellow
+pgdata-blue
+pgdata-purple
 
 # environment
 .env

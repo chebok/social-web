@@ -42,20 +42,20 @@ services:
     volumes:
       - ./pgdata-purple:/var/lib/postgresql/data/pgdata
 
-  # backend:
-  #   container_name: api_nest_1
-  #   build:
-  #     context: ./backend
-  #   depends_on:
-  #     - pg_yellow
-  #   restart: unless-stopped
-  #   ports:
-  #     - ${API_PORT}:${API_PORT}
-  #   environment:
-  #     API_PORT: ${API_PORT}
-  #     JWT_SECRET: ${JWT_SECRET}
-  #     DB_YELLOW_HOST: pg_yellow
-  #     DB_YELLOW_PORT: ${DB_YELLOW_PORT}
-  #     DB_NAME: ${DB_NAME}
-  #     DB_USER: ${DB_USER}
-  #     DB_PASSWORD: ${DB_PASSWORD}
+  backend:
+    container_name: api_nest_1
+    build:
+      context: ./backend
+    depends_on:
+      - pg_yellow
+    restart: unless-stopped
+    ports:
+      - ${API_PORT}:${API_PORT}
+    environment:
+      API_PORT: ${API_PORT}
+      JWT_SECRET: ${JWT_SECRET}
+      DB_YELLOW_HOST: pg_yellow
+      DB_YELLOW_PORT: ${DB_YELLOW_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}

@@ -1,33 +1,56 @@
 version: '3.8'
+
 services:
   pg_yellow:
-    container_name: pg_yellow
     image: postgres:16
+    user: postgres
     restart: unless-stopped
+    container_name: pg_yellow
     ports:
       - ${DB_YELLOW_PORT}:${DB_YELLOW_PORT}
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_HOST_AUTH_METHOD: "scram-sha-256\nhost replication all 0.0.0.0/0 md5"
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    command: |
+      postgres 
+      -c wal_level=replica 
+      -c hot_standby=on 
+      -c max_wal_senders=10 
+      -c max_replication_slots=10 
+      -c hot_standby_feedback=on
     volumes:
-      - ./pgdata-yellow:/var/lib/postgresql/data/pgdata
+      - pgdata-yellow:/var/lib/postgresql/data
+      - ./sql-scripts/00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
   
   pg_purple:
-    container_name: pg_purple
     image: postgres:16
+    user: postgres
     restart: unless-stopped
+    container_name: pg_purple
     ports:
       - ${DB_PURPLE_PORT}:${DB_PURPLE_PORT}
     environment:
       POSTGRES_DB: ${DB_NAME}
+      PGUSER: replicator
+      PGPASSWORD: replicator_password
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      PGDATA: /var/lib/postgresql/data/pgdata
-    command: ["postgres", "-p", "${DB_PURPLE_PORT}"]
-    volumes:
-      - ./pgdata-purple:/var/lib/postgresql/data/pgdata
+    command: |
+      bash -c "
+      until pg_basebackup --pgdata=/var/lib/postgresql/data -R --slot=replication_slot --host=pg_yellow --port=${DB_YELLOW_PORT}
+      do
+      echo 'Waiting for master to connect...'
+      sleep 1s
+      done
+      echo 'Backup done, starting replica...'
+      chmod 0700 /var/lib/postgresql/data
+      postgres -p ${DB_PURPLE_PORT}
+      "
+    depends_on:
+      - pg_yellow
   
   redis:
     container_name: redis_social
@@ -102,3 +125,6 @@ services:
       RABBIT_FEED_QUEUE: ${RABBIT_FEED_QUEUE}
       REDIS_HOST: redis
       REDIS_PORT: ${REDIS_PORT}
+
+volumes:
+  pgdata-yellow:

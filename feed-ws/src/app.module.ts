@@ -7,6 +7,8 @@ import { getRedisConfig } from './configs/redis.config';
 import { RedisModule } from './redis/redis.module';
 import { getDatabaseConfig } from './configs/database.config';
 import { DatabaseModule } from './database/database.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { KafkaModule } from './kafka/kafka.module';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { DatabaseModule } from './database/database.module';
       isGlobal: true,
     }),
     PostModule,
+    KafkaModule,
+    EventEmitterModule.forRoot(),
     RedisModule.registerAsync({
       inject: [ConfigService],
       useFactory: getRedisConfig,

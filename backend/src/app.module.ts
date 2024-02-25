@@ -8,7 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { getDatabaseConfig } from './configs/database.config';
 import { PostModule } from './post/post.module';
 import { FriendModule } from './friend/friend.module';
-import { RmqClientModule } from './rmq-client/rmq-client.module';
+import { KafkaModule } from './kafka/kafka.module';
 import { RedisModule } from './redis/redis.module';
 import { getRedisConfig } from './configs/redis.config';
 
@@ -26,7 +26,7 @@ import { getRedisConfig } from './configs/redis.config';
     AuthModule,
     PostModule,
     FriendModule,
-    RmqClientModule,
+    KafkaModule,
     RedisModule.registerAsync({
       inject: [ConfigService],
       useFactory: getRedisConfig,

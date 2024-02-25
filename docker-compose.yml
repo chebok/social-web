@@ -57,16 +57,33 @@ services:
     image: "redis:7.2.4"
     ports:
       - ${REDIS_PORT}:${REDIS_PORT}
-
-  rabbitmq:
-    container_name: rabbit_social
-    image: rabbitmq:3.13-rc-management
+  
+  kafdrop:
+    container_name: kafdrop
+    image: obsidiandynamics/kafdrop
+    restart: "no"
     ports:
-      - ${RABBITMQ_PORT_MANAGEMENT}:${RABBITMQ_PORT_MANAGEMENT} # Для веб-интерфейса RabbitMQ
-      - ${RABBITMQ_PORT}:${RABBITMQ_PORT}
+      - "9000:9000"
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+      KAFKA_BROKERCONNECT: "kafka:29092"
+    depends_on:
+      - "kafka"
+  kafka:
+    container_name: kafka
+    image: obsidiandynamics/kafka
+    restart: "no"
+    ports:
+      - "2181:2181"
+      - ${KAFKA_PORT}:${KAFKA_PORT}
+    environment:
+      KAFKA_LISTENERS: "INTERNAL://:29092,EXTERNAL://:${KAFKA_PORT}"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka:29092,EXTERNAL://kafka:${KAFKA_PORT}"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_ZOOKEEPER_SESSION_TIMEOUT: "6000"
+      KAFKA_RESTART_ATTEMPTS: "10"
+      KAFKA_RESTART_DELAY: "5"
+      ZOOKEEPER_AUTOPURGE_PURGE_INTERVAL: "0"
   
   backend:
     container_name: api_nest_1
@@ -76,7 +93,8 @@ services:
       - pg_yellow
       - pg_purple
       - redis
-      - rabbitmq
+      - kafdrop
+      - kafka
     restart: unless-stopped
     ports:
       - ${API_PORT}:${API_PORT}
@@ -90,12 +108,8 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: ${RABBITMQ_PORT}
-      RABBITMQ_PORT_MANAGEMENT: ${RABBITMQ_PORT_MANAGEMENT}
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
-      RABBIT_FEED_QUEUE: ${RABBIT_FEED_QUEUE}
+      KAFKA_HOST: kafka
+      KAFKA_PORT: ${KAFKA_PORT}
       REDIS_HOST: redis
       REDIS_PORT: ${REDIS_PORT}
 
@@ -107,8 +121,11 @@ services:
       - pg_yellow
       - pg_purple
       - redis
-      - rabbitmq
+      - kafdrop
+      - kafka
     restart: unless-stopped
+    ports:
+      - ${WS_PORT}:${WS_PORT}
     environment:
       DB_YELLOW_HOST: pg_yellow
       DB_YELLOW_PORT: ${DB_YELLOW_PORT}
@@ -117,12 +134,8 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: ${RABBITMQ_PORT}
-      RABBITMQ_PORT_MANAGEMENT: ${RABBITMQ_PORT_MANAGEMENT}
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
-      RABBIT_FEED_QUEUE: ${RABBIT_FEED_QUEUE}
+      KAFKA_HOST: kafka
+      KAFKA_PORT: ${KAFKA_PORT}
       REDIS_HOST: redis
       REDIS_PORT: ${REDIS_PORT}
 

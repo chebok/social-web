@@ -1,15 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Pool } from 'pg';
 import { PG_MASTER_DB } from '../database/database.constants';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientKafka } from '@nestjs/microservices';
 import { IUser } from '../common/user.interface';
-import { FEED_WS_SERVICE } from '../rmq-client/rmq-client.const';
+import { FEED_WS_SERVICE } from '../kafka/kafka.const';
 
 @Injectable()
 export class FriendService {
   constructor(
     @Inject(PG_MASTER_DB) readonly pgMaster: Pool,
-    @Inject(FEED_WS_SERVICE) private readonly feedClient: ClientProxy,
+    @Inject(FEED_WS_SERVICE) private readonly feedClient: ClientKafka,
   ) {}
 
   async addFriend(userId: string, friendId: string): Promise<any> {

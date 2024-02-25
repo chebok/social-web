@@ -1,38 +1,47 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Pool } from 'pg';
 import { RedisClientType } from 'redis';
-import { PG_MASTER_DB } from '../database/database.constants';
+import { PG_REPLICA_DB } from '../database/database.constants';
 import { REDIS_SRC } from '../redis/redis.const';
 import { IUser } from '../common/user.interface';
 import { POST_FEED_TTL } from '../common/ttl.const';
+import { IPost } from '../common/post.interface';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class PostService {
   constructor(
-    @Inject(PG_MASTER_DB) private readonly pgMaster: Pool,
+    @Inject(PG_REPLICA_DB) private readonly pgReplica: Pool,
     @Inject(REDIS_SRC) private readonly redisClient: RedisClientType,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async updateManyFeedByFriend({ user }: { user: IUser }) {
+  async updateManyFeedByFriend(post: IPost) {
     // Определяем юзеров, для которых текущий является другом
-    const { rows: users } = await this.pgMaster.query(
+    const { rows: users } = await this.pgReplica.query(
       `
       SELECT
         user_id as id
       FROM public.friend
       WHERE friend_id = $1;
     `,
-      [user.id],
+      [post.author_user_id],
     );
-    // Для каждого переcтраиваем кэш
-    const promises = users.map((userToRebuild) => {
-      return this.updateFeedCacheByUser(userToRebuild);
-    });
+    const promises = [];
+    // Обновляем ленту в кэше только подключенным пользователям.
+    for (const user of users) {
+      const userSocketSession = await this.redisClient.get(`userSocketSession:${user.id}`);
+      if (!userSocketSession) continue;
+      // Отправить эвент для вебсокет gateway
+      this.eventEmitter.emit('post.changes', user, post);
+      // Пересчёт ленты
+      promises.push(this.updateFeedCacheByUser(user));
+    }
     await Promise.all(promises);
   }
 
   async updateFeedCacheByUser(user: IUser) {
-    const { rows } = await this.pgMaster.query(
+    const { rows } = await this.pgReplica.query(
       `
       SELECT
         p.id,

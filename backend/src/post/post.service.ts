@@ -4,19 +4,20 @@ import { PostCreateDto } from './dto/post-create.dto';
 import { PostUpdateDto } from './dto/post-update.dto';
 import { Pool } from 'pg';
 import { PG_MASTER_DB } from '../database/database.constants';
-import { ClientProxy } from '@nestjs/microservices';
-import { FEED_WS_SERVICE } from '../rmq-client/rmq-client.const';
+import { ClientKafka } from '@nestjs/microservices';
+import { FEED_WS_SERVICE } from '../kafka/kafka.const';
 import { PostFeedParamsDto } from './dto/post-feed-params.dto';
 import { REDIS_SRC } from '../redis/redis.const';
 import { RedisClientType } from 'redis';
 import { POST_FEED_TTL } from '../common/ttl.const';
+import { IPost } from '../common/post.interface';
 
 @Injectable()
 export class PostService {
   constructor(
     @Inject(PG_MASTER_DB) private readonly pgMaster: Pool,
     @Inject(REDIS_SRC) private readonly redisClient: RedisClientType,
-    @Inject(FEED_WS_SERVICE) private readonly feedClient: ClientProxy,
+    @Inject(FEED_WS_SERVICE) private readonly feedClient: ClientKafka,
   ) {}
 
   async getPostFeed(user: IUser, { limit, offset }: PostFeedParamsDto) {
@@ -55,17 +56,20 @@ export class PostService {
   }
 
   async deletePost(user: IUser, id: string) {
-    await this.pgMaster.query(
+    const { rows } = await this.pgMaster.query(
       `
       DELETE
       FROM public.post
       WHERE id = $1
         AND author_user_id = $2
+        RETURNING id, author_user_id, text;
     `,
       [id, user.id],
     );
 
-    this.publishEventToFeedService(user);
+    if (rows[0]) {
+      this.publishEventToFeedService(rows[0]);
+    }
   }
 
   async updatePost(user: IUser, { id, text }: PostUpdateDto) {
@@ -75,12 +79,15 @@ export class PostService {
       SET text = $1
       WHERE id = $2
         AND author_user_id = $3
-      RETURNING id, text;
+      RETURNING id, author_user_id, text;
     `,
       [text, id, user.id],
     );
 
-    this.publishEventToFeedService(user);
+    if (rows[0]) {
+      this.publishEventToFeedService(rows[0]);
+    }
+    
 
     return rows[0];
   }
@@ -90,12 +97,14 @@ export class PostService {
       `
       INSERT INTO public.post (author_user_id, text)
       VALUES ($1, $2)
-      RETURNING id;
+      RETURNING id, author_user_id, text;
     `,
       [user.id, text],
     );
 
-    this.publishEventToFeedService(user);
+    if (rows[0]) {
+      this.publishEventToFeedService(rows[0]);
+    }
 
     return rows[0];
   }
@@ -118,7 +127,7 @@ export class PostService {
     return rows;
   }
 
-  async publishEventToFeedService(user: IUser) {
-    this.feedClient.emit('post_changes', { user });
+  async publishEventToFeedService(post: IPost) {
+    this.feedClient.emit('post_changes', { post });
   }
 }

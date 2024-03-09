@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { PG_MASTER_DB, PG_REPLICA_DB } from '../database/database.constants';
+import { PG_MASTER_DB } from '../database/database.constants';
 import { sql } from 'kysely';
 import { UserRegisterDto } from './dto/user-register.dto';
 import { hash } from 'bcryptjs';
@@ -10,7 +10,6 @@ import { Pool } from 'pg';
 export class UserService {
   constructor(
     @Inject(PG_MASTER_DB) readonly pgMaster: Pool,
-    @Inject(PG_REPLICA_DB) readonly pgReplica: Pool,
     private readonly dbService: DatabaseService,
   ) {}
 
@@ -32,7 +31,7 @@ export class UserService {
   }
 
   async findUserById(userId: string) {
-    const { rows } = await this.pgReplica.query(
+    const { rows } = await this.pgMaster.query(
       `
       SELECT 
         id, 
@@ -63,7 +62,7 @@ export class UserService {
   }
 
   async findUsersByPrefix(first_name: string, second_name: string) {
-    const { rows } = await this.pgReplica.query(
+    const { rows } = await this.pgMaster.query(
       `
       SELECT 
         id, 

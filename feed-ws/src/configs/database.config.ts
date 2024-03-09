@@ -13,16 +13,5 @@ export const getDatabaseConfig = async (configService: ConfigService): Promise<I
     connectionTimeoutMillis: 20000,
   };
 
-  const pgReplicaConfig = {
-    host: configService.get('DB_PURPLE_HOST') || 'localhost',
-    port: configService.get('DB_PURPLE_PORT') || 5432,
-    user: configService.get('DB_USER') || 'admin',
-    password: configService.get('DB_PASSWORD') || 'admin',
-    database: configService.get('DB_NAME') || 'social_web',
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 20000,
-  };
-
-  return { pgMasterConfig, pgReplicaConfig };
+  return { pgMasterConfig };
 };

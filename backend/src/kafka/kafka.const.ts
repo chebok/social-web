@@ -1,1 +1,2 @@
 export const FEED_WS_SERVICE = 'FEED_WS_SERVICE';
+export const DIALOG_SERVICE = 'DIALOG_SERVICE';

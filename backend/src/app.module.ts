@@ -11,6 +11,7 @@ import { FriendModule } from './friend/friend.module';
 import { KafkaModule } from './kafka/kafka.module';
 import { RedisModule } from './redis/redis.module';
 import { getRedisConfig } from './configs/redis.config';
+import { DialogModule } from './dialog/dialog.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { getRedisConfig } from './configs/redis.config';
       inject: [ConfigService],
       useFactory: getRedisConfig,
     }),
+    DialogModule,
   ],
   controllers: [AppController],
   providers: [AppService],

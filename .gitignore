@@ -3,16 +3,16 @@ backend/dist
 feed-ws/dist
 seed-generator/dist
 seed-generator/seed-data
+dialog/dist
 
 # dependencies
 backend/node_modules
 feed-ws/node_modules
 seed-generator/node_modules
+dialog/node_modules
 
 # db volume
 pgdata-yellow
-pgdata-blue
-pgdata-purple
 
 # environment
 .env

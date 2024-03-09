@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Pool } from 'pg';
 import { RedisClientType } from 'redis';
-import { PG_REPLICA_DB } from '../database/database.constants';
+import { PG_MASTER_DB } from '../database/database.constants';
 import { REDIS_SRC } from '../redis/redis.const';
 import { IUser } from '../common/user.interface';
 import { POST_FEED_TTL } from '../common/ttl.const';
@@ -11,14 +11,14 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 @Injectable()
 export class PostService {
   constructor(
-    @Inject(PG_REPLICA_DB) private readonly pgReplica: Pool,
+    @Inject(PG_MASTER_DB) private readonly pgMaster: Pool,
     @Inject(REDIS_SRC) private readonly redisClient: RedisClientType,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async updateManyFeedByFriend(post: IPost) {
     // Определяем юзеров, для которых текущий является другом
-    const { rows: users } = await this.pgReplica.query(
+    const { rows: users } = await this.pgMaster.query(
       `
       SELECT
         user_id as id
@@ -41,7 +41,7 @@ export class PostService {
   }
 
   async updateFeedCacheByUser(user: IUser) {
-    const { rows } = await this.pgReplica.query(
+    const { rows } = await this.pgMaster.query(
       `
       SELECT
         p.id,

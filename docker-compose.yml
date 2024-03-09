@@ -1,56 +1,41 @@
 version: '3.8'
 
 services:
-  pg_yellow:
-    image: postgres:16
-    user: postgres
-    restart: unless-stopped
-    container_name: pg_yellow
+
+  master:
+    container_name: "${COMPOSE_PROJECT_NAME:-citus}_master"
+    image: "citusdata/citus:12.1.2"
     ports:
       - ${DB_YELLOW_PORT}:${DB_YELLOW_PORT}
-    environment:
+    labels: ["com.citusdata.role=Master"]
+    environment: &AUTH
       POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_HOST_AUTH_METHOD: "scram-sha-256\nhost replication all 0.0.0.0/0 md5"
-      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
-    command: |
-      postgres 
-      -c wal_level=replica 
-      -c hot_standby=on 
-      -c max_wal_senders=10 
-      -c max_replication_slots=10 
-      -c hot_standby_feedback=on
+      POSTGRES_USER: "${DB_USER:-postgres}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      PGUSER: "${DB_USER:-postgres}"
+      PGPASSWORD: "${DB_PASSWORD}"
+      POSTGRES_HOST_AUTH_METHOD: "${POSTGRES_HOST_AUTH_METHOD:-trust}"
     volumes:
       - pgdata-yellow:/var/lib/postgresql/data
-      - ./sql-scripts/00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
-  
-  pg_purple:
-    image: postgres:16
-    user: postgres
-    restart: unless-stopped
-    container_name: pg_purple
-    ports:
-      - ${DB_PURPLE_PORT}:${DB_PURPLE_PORT}
-    environment:
-      POSTGRES_DB: ${DB_NAME}
-      PGUSER: replicator
-      PGPASSWORD: replicator_password
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    command: |
-      bash -c "
-      until pg_basebackup --pgdata=/var/lib/postgresql/data -R --slot=replication_slot --host=pg_yellow --port=${DB_YELLOW_PORT}
-      do
-      echo 'Waiting for master to connect...'
-      sleep 1s
-      done
-      echo 'Backup done, starting replica...'
-      chmod 0700 /var/lib/postgresql/data
-      postgres -p ${DB_PURPLE_PORT}
-      "
-    depends_on:
-      - pg_yellow
+
+  citus_worker:
+    image: "citusdata/citus:12.1.2"
+    labels: ["com.citusdata.role=Worker"]
+    depends_on: [citus_manager]
+    environment: *AUTH
+    command: "/wait-for-manager.sh"
+    volumes:
+      - pgdata-worker-yellow:/var/lib/postgresql/data
+      - healthcheck-volume:/healthcheck
+
+  citus_manager:
+    container_name: "${COMPOSE_PROJECT_NAME:-citus}_manager"
+    image: "citusdata/membership-manager:0.3.0"
+    volumes:
+      - "${DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock"
+      - healthcheck-volume:/healthcheck
+    depends_on: [master]
+    environment: *AUTH
   
   redis:
     container_name: redis_social
@@ -90,8 +75,7 @@ services:
     build:
       context: ./backend
     depends_on:
-      - pg_yellow
-      - pg_purple
+      - master
       - redis
       - kafdrop
       - kafka
@@ -101,10 +85,8 @@ services:
     environment:
       API_PORT: ${API_PORT}
       JWT_SECRET: ${JWT_SECRET}
-      DB_YELLOW_HOST: pg_yellow
+      DB_YELLOW_HOST: master
       DB_YELLOW_PORT: ${DB_YELLOW_PORT}
-      DB_PURPLE_HOST: pg_purple
-      DB_PURPLE_PORT: ${DB_PURPLE_PORT}
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
@@ -112,14 +94,31 @@ services:
       KAFKA_PORT: ${KAFKA_PORT}
       REDIS_HOST: redis
       REDIS_PORT: ${REDIS_PORT}
+  
+  dialog:
+    container_name: dialog
+    build:
+      context: ./dialog
+    depends_on:
+      - master
+      - kafdrop
+      - kafka
+    restart: unless-stopped
+    environment:
+      DB_YELLOW_HOST: master
+      DB_YELLOW_PORT: ${DB_YELLOW_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      KAFKA_HOST: kafka
+      KAFKA_PORT: ${KAFKA_PORT}
 
   feed-ws:
     container_name: feed-ws
     build:
       context: ./feed-ws
     depends_on:
-      - pg_yellow
-      - pg_purple
+      - master
       - redis
       - kafdrop
       - kafka
@@ -127,10 +126,8 @@ services:
     ports:
       - ${WS_PORT}:${WS_PORT}
     environment:
-      DB_YELLOW_HOST: pg_yellow
+      DB_YELLOW_HOST: master
       DB_YELLOW_PORT: ${DB_YELLOW_PORT}
-      DB_PURPLE_HOST: pg_purple
-      DB_PURPLE_PORT: ${DB_PURPLE_PORT}
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
@@ -141,3 +138,5 @@ services:
 
 volumes:
   pgdata-yellow:
+  pgdata-worker-yellow:
+  healthcheck-volume:

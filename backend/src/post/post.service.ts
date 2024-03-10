@@ -8,15 +8,15 @@ import { ClientKafka } from '@nestjs/microservices';
 import { FEED_WS_SERVICE } from '../kafka/kafka.const';
 import { PostFeedParamsDto } from './dto/post-feed-params.dto';
 import { REDIS_SRC } from '../redis/redis.const';
-import { RedisClientType } from 'redis';
 import { POST_FEED_TTL } from '../common/ttl.const';
 import { IPost } from '../common/post.interface';
+import { Redis } from 'ioredis';
 
 @Injectable()
 export class PostService {
   constructor(
     @Inject(PG_MASTER_DB) private readonly pgMaster: Pool,
-    @Inject(REDIS_SRC) private readonly redisClient: RedisClientType,
+    @Inject(REDIS_SRC) private readonly redisClient: Redis,
     @Inject(FEED_WS_SERVICE) private readonly feedClient: ClientKafka,
   ) {}
 
@@ -29,9 +29,7 @@ export class PostService {
       postFeed = JSON.parse(postFeedJson);
     } else {
       postFeed = await this.buildPostFeed(user);
-      await this.redisClient.set(redisKey, JSON.stringify(postFeed), {
-        EX: POST_FEED_TTL,
-      });
+      await this.redisClient.setex(redisKey, POST_FEED_TTL, JSON.stringify(postFeed));
     }
 
     // Выбираем нужную часть данных с использованием limit и offset
@@ -87,7 +85,6 @@ export class PostService {
     if (rows[0]) {
       this.publishEventToFeedService(rows[0]);
     }
-    
 
     return rows[0];
   }

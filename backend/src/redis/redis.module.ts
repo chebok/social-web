@@ -1,8 +1,9 @@
 import { DynamicModule, Global, Module, Provider } from '@nestjs/common';
-import { createClient } from 'redis';
-import { RedisService } from './redis.service';
+import { Redis } from 'ioredis';
+import { CommonRedisService } from './redis.service';
 import { REDIS_SRC } from './redis.const';
 import { IRedisModuleAsyncOptions } from './redis.interface';
+import { DialogRedisService } from './services/dialog-redis.service';
 
 @Global()
 @Module({})
@@ -12,8 +13,8 @@ export class RedisModule {
     return {
       module: RedisModule,
       imports: options.imports,
-      providers: [RedisService, RedisSource],
-      exports: [RedisService, RedisSource],
+      providers: [CommonRedisService, DialogRedisService, RedisSource],
+      exports: [DialogRedisService, RedisSource],
     };
   }
 
@@ -23,12 +24,11 @@ export class RedisModule {
       useFactory: async (...args: any[]) => {
         try {
           const { host, port } = await options.useFactory(...args);
-          const client = await createClient({
-            url: `redis://${host}:${port}`,
-          })
-            .on('error', (err) => console.log('Redis Client Error', err))
-            .connect();
-          return client;
+          const redisClient = new Redis({
+            host,
+            port,
+          });
+          return redisClient;
         } catch (e) {
           console.error(e);
           throw e;

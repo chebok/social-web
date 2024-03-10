@@ -40,8 +40,11 @@ services:
   redis:
     container_name: redis_social
     image: "redis:7.2.4"
+    command: redis-server --appendonly yes --appendfsync everysec
     ports:
       - ${REDIS_PORT}:${REDIS_PORT}
+    volumes:
+      - redis_data:/data
   
   kafdrop:
     container_name: kafdrop
@@ -137,6 +140,7 @@ services:
       REDIS_PORT: ${REDIS_PORT}
 
 volumes:
+  redis_data:
   pgdata-yellow:
   pgdata-worker-yellow:
   healthcheck-volume:
